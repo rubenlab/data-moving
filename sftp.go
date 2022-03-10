@@ -22,30 +22,40 @@ func getKnownHostsFile(providedPath string) string {
 	}
 }
 
+var hostKeyCallback *ssh.HostKeyCallback
+var signer *ssh.Signer
+
 func createSftpClient(config *Config, privateKey []byte, secret []byte) (*sftp.Client, error) {
-	hostKeyCallback, err := kh.New(getKnownHostsFile(config.KnownHosts))
-	if err != nil {
-		return nil, err
+	var err error
+	if hostKeyCallback == nil {
+		hostKeyCallbackImpl, err := kh.New(getKnownHostsFile(config.KnownHosts))
+		if err != nil {
+			return nil, err
+		}
+		hostKeyCallback = &hostKeyCallbackImpl
 	}
 
-	var signer ssh.Signer
-	// Create the Signer for this private key.
-	if secret == nil {
-		signer, err = ssh.ParsePrivateKey(privateKey)
-	} else {
-		signer, err = ssh.ParsePrivateKeyWithPassphrase(privateKey, secret)
-	}
-	if err != nil {
-		return nil, err
+	if signer == nil {
+		var signerImpl ssh.Signer
+		// Create the Signer for this private key.
+		if len(secret) == 0 {
+			signerImpl, err = ssh.ParsePrivateKey(privateKey)
+		} else {
+			signerImpl, err = ssh.ParsePrivateKeyWithPassphrase(privateKey, secret)
+		}
+		if err != nil {
+			return nil, err
+		}
+		signer = &signerImpl
 	}
 
 	sshClient := &ssh.ClientConfig{
 		User: config.Dest.Username,
 		Auth: []ssh.AuthMethod{
 			// Add in password check here for moar security.
-			ssh.PublicKeys(signer),
+			ssh.PublicKeys(*signer),
 		},
-		HostKeyCallback: hostKeyCallback,
+		HostKeyCallback: *hostKeyCallback,
 	}
 	// Dial your ssh server.
 	conn, err := ssh.Dial("tcp", config.Dest.Host+":"+fmt.Sprint(config.Dest.Port), sshClient)

@@ -12,6 +12,7 @@ type Config struct {
 	Source struct {
 		RootDir    string `yaml:"root-dir"`
 		StartLevel int    `yaml:"start-level"` // Files parallel to the start level are ignored, all files should be placed in the start level directory or deeper.
+		Overwrite  bool   // Overwrite existing file on the remote server
 	}
 	Dest struct {
 		Host         string

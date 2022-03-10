@@ -1,6 +1,7 @@
 source:
   root-dir: /home/ytm/test
   start-level: 2
+  overwrite: true
 dest:
   host: transfer-mdc.hpc.gwdg.de
   port: 22

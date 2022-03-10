@@ -2,13 +2,16 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/sevlyar/go-daemon"
+	"golang.org/x/term"
 )
 
 var (
@@ -52,18 +55,25 @@ func startMoveFile() {
 		return
 	}
 
-	var secret []byte
-
+	var secretStr string
 	if *secretFile != "" {
+		var secret []byte
 		secret, err = ioutil.ReadFile(*secretFile)
 		if err != nil {
 			log.Fatalf("can't read pwdfile: %v", err)
 			return
 		}
 		os.Remove(*secretFile)
+		secretStr = string(secret)
+	} else if !*asDaemon {
+		fmt.Println("Input password for private key:")
+		bytePassword, err := term.ReadPassword(int(syscall.Stdin))
+		if err != nil {
+			log.Fatalf("error in input password, error: %v", err)
+			return
+		}
+		secretStr = string(bytePassword)
 	}
-
-	secretStr := string(secret)
 	secretStr = strings.TrimSpace(secretStr)
 
 	privateKey, err := ioutil.ReadFile(config.Dest.IdentityFile)

@@ -18,6 +18,9 @@ func TestLoadConfig(t *testing.T) {
 		t.Errorf("path is not correct, the loaded path is: %v", config.Dest.Path)
 		t.Error(config)
 	}
+	if !config.Source.Overwrite {
+		t.Errorf("overwrite parameter is not expected value %v", true)
+	}
 }
 
 func TestGetKnownHost(t *testing.T) {
@@ -45,21 +48,5 @@ func TestRemoveEmptyFolder(t *testing.T) {
 	removeEmptyFolder(path)
 	if _, err := os.Stat(path); !os.IsNotExist(err) {
 		t.Errorf("empty folder not deleted")
-	}
-}
-
-func TestEncryption(t *testing.T) {
-	data := "random text, hahaha"
-	secret := "lalala_this@is#password"
-	encryptedStr, err := encryptToString(secret, []byte(data))
-	if err != nil {
-		t.Error(err)
-	}
-	dataBytes, err := decryptString(secret, encryptedStr)
-	if err != nil {
-		t.Error(err)
-	}
-	if data != string(dataBytes) {
-		t.Errorf("encrypt and decrypt failed, the result is: %s", string(dataBytes))
 	}
 }

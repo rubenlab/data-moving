@@ -21,10 +21,11 @@ func ExecuteMove(config *Config, client *sftp.Client) {
 	targetDir := config.Dest.Path
 	dustbin := config.Dustbin
 	startLevel := config.Source.StartLevel
-	executeMoveInternal(client, rootDir, startLevel, targetDir, dustbin, rootDir, 1)
+	overwrite := config.Source.Overwrite
+	executeMoveInternal(client, overwrite, rootDir, startLevel, targetDir, dustbin, rootDir, 1)
 }
 
-func executeMoveInternal(client *sftp.Client, rootDir string, startLevel int, targetDir string, dustbin string, currentDir string, currentLevel int) {
+func executeMoveInternal(client *sftp.Client, overwrite bool, rootDir string, startLevel int, targetDir string, dustbin string, currentDir string, currentLevel int) {
 	files, err := ioutil.ReadDir(currentDir)
 	if err != nil {
 		log.Printf("can't open folder %s,\nthe error is: %v\n", currentDir, err)
@@ -38,7 +39,7 @@ func executeMoveInternal(client *sftp.Client, rootDir string, startLevel int, ta
 				log.Printf("can't create parent folders for folder %s,\nthe error is: %v\n", currentDir, err)
 				continue
 			}
-			executeMoveInternal(client, rootDir, startLevel, targetDir, dustbin, filePath, currentLevel+1)
+			executeMoveInternal(client, overwrite, rootDir, startLevel, targetDir, dustbin, filePath, currentLevel+1)
 			if currentLevel >= startLevel {
 				removeEmptyFolder(filePath)
 			}
@@ -46,7 +47,7 @@ func executeMoveInternal(client *sftp.Client, rootDir string, startLevel int, ta
 			if currentLevel <= startLevel {
 				continue
 			}
-			moveFile(client, rootDir, targetDir, dustbin, filePath)
+			moveFile(client, overwrite, rootDir, targetDir, dustbin, filePath)
 		}
 	}
 }
@@ -75,7 +76,7 @@ func mkdirAll(client *sftp.Client, rootDir string, targetDir string, dustbin str
 	return nil
 }
 
-func moveFile(client *sftp.Client, rootDir string, targetDir string, dustbin string, filePath string) {
+func moveFile(client *sftp.Client, overwrite bool, rootDir string, targetDir string, dustbin string, filePath string) {
 	targetPath, err := replacePath(filePath, rootDir, targetDir)
 	if err != nil {
 		log.Printf("error in generating targetPath, the error is:\n%v", err)
@@ -88,11 +89,14 @@ func moveFile(client *sftp.Client, rootDir string, targetDir string, dustbin str
 		return
 	}
 
-	targetPath, err = avoidExistsFile(client, targetPath, targetPathDir)
-	if err != nil {
-		log.Printf("can't avoid exists file, the error is:\n%v", err)
-		return
+	if !overwrite {
+		targetPath, err = avoidExistsFile(client, targetPath, targetPathDir)
+		if err != nil {
+			log.Printf("can't avoid exists file, the error is:\n%v", err)
+			return
+		}
 	}
+
 	targetFile, err := client.Create(targetPath)
 	if err != nil {
 		log.Printf("can't open target file, the error is:\n%v", err)
