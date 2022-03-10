@@ -110,9 +110,9 @@ So for users, all you have to do is to create a new directory with your name in 
 
 Notice, use cut not copy. Since the program automatically removes files, copy will report an error, and there is no reason to use copy.
 
-Then maybe go to sleep, check the next day to see if all the data has been moved to the HPC, then delete the data in the dustbin.
+After the files are moved to the HPC, they will not be deleted but moved to the ***tohpcDustbin*** folder.
 
-Of course, this step should also be omitted in the future. A good program is more accurate than a human.
+So you can check if the files are transfered correctly, and then delete them safely to free up space.
 
 ## Required directory structure:
 
