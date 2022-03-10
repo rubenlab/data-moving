@@ -135,7 +135,7 @@ Level 3, dataset folder. The data generated each time the microscope is used cor
 
 Level4, folders and files inside dataset. Except for the original files produced by the EM should be placed under the ***frames*** directory, other structures are arbitrary.
 
-**Please notice that only files in under the dataset directories(and their sub folders) will be transfered.**
+**Please notice that only files under the dataset directories(and their sub folders) will be transfered.**
 
 For example:
 
