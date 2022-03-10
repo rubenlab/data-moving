@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/pkg/sftp"
 	"github.com/sevlyar/go-daemon"
 	"golang.org/x/term"
 )
@@ -81,6 +82,7 @@ func startMoveFile() {
 		log.Fatalf("can't load identity file: %v", err)
 	}
 
+	defer closeSftpClient()
 	for {
 		log.Printf("execute file move\n")
 		executeMoveOnce(config, privateKey, secretStr)
@@ -89,12 +91,47 @@ func startMoveFile() {
 	}
 }
 
+var sftpClient *sftp.Client
+var connectTime time.Time
+
+func getSftpClient(config *Config, privateKey []byte, secret []byte) (*sftp.Client, error) {
+	if sftpClient == nil {
+		var err error
+		sftpClient, err = createSftpClient(config, privateKey, secret)
+		if err != nil {
+			return nil, err
+		}
+		connectTime = time.Now()
+		return sftpClient, nil
+	} else {
+		now := time.Now()
+		if connectTime.Add(10 * time.Minute).Before(now) {
+			log.Println("reconnect sftp client")
+			sftpClient.Close()
+			sftpClient = nil
+			var err error
+			sftpClient, err = createSftpClient(config, privateKey, secret)
+			if err != nil {
+				return nil, err
+			}
+			connectTime = time.Now()
+		}
+		return sftpClient, nil
+	}
+}
+
+func closeSftpClient() {
+	if sftpClient == nil {
+		return
+	}
+	sftpClient.Close()
+}
+
 func executeMoveOnce(config *Config, privateKey []byte, secret string) {
-	client, err := createSftpClient(config, privateKey, []byte(secret))
+	client, err := getSftpClient(config, privateKey, []byte(secret))
 	if err != nil {
 		log.Printf("can't create sftp client: %v\n", err)
 		return
 	}
-	defer client.Close()
 	ExecuteMove(config, client)
 }
