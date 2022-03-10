@@ -1,0 +1,10 @@
+source:
+  root-dir: /home/ytm/test
+  start-level: 2
+dest:
+  host: transfer-mdc.hpc.gwdg.de
+  port: 22
+  identity-file: /home/ytm/test/id-rsa
+  username: yi1
+  path: /usr/yi1
+dustbin: /home/ytm/test2
