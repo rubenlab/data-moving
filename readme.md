@@ -135,4 +135,19 @@ Level 3, dataset folder. The data generated each time the microscope is used cor
 
 Level4, folders and files inside dataset. Except for the original files produced by the EM should be placed under the ***frames*** directory, other structures are arbitrary.
 
-Only files under the dataset folders will be moved, files under project folder will be ignored.
+Please notice that only files in under the dataset directories(and their sub folders) will be transfered.
+
+For example:
+
+```
+tohpc/
+├── Tianming
+│   ├── demo project
+│   │   ├── projectFile.txt
+│   │   ├── dataset1
+│   │   │   ├── frames
+│   │   │   ├── dataFile.txt
+│   │   │   └── ...
+```
+
+The whole folder "*dataset1*" will be transfered to the HPC. But the file "*projectFile.txt*" will be ignored.
