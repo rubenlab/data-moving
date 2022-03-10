@@ -102,7 +102,7 @@ Dustbin defines a trash directory. Files that have been moved to the HPC will no
 
 ## Usage
 
-The ***tohpc** program is deployed on the pre-processing server. It monitors the ***tohpc*** directory on the ***Titan offload drive***.
+The ***tohpc*** program is deployed on the pre-processing server. It monitors the ***tohpc*** directory on the ***Titan offload drive***.
 
 The destination folder on the HPC is ***/scratch1/projects/rubsak/from-offload***.
 
@@ -113,3 +113,26 @@ Notice, use cut not copy. Since the program automatically removes files, copy wi
 Then maybe go to sleep, check the next day to see if all the data has been moved to the HPC, then delete the data in the dustbin.
 
 Of course, this step should also be omitted in the future. A good program is more accurate than a human.
+
+## Required directory structure:
+
+```
+tohpc/
+├── User folder
+│   ├── Project folder
+│   │   ├── Dataset folder
+│   │   │   ├── frames
+│   │   │   └── ...
+```
+
+Under the ***tohpc*** folder, there're four levels of directories.
+
+Level 1, user folder level. Each user names a directory with their own name.
+
+Level 2, project folder. Each user may have multiple projects, and each directory matches a research project.
+
+Level 3, dataset folder. The data generated each time the microscope is used corresponds to a dataset.
+
+Level4, folders and files inside dataset. Except for the original files produced by the EM should be placed under the ***frames*** directory, other structures are arbitrary.
+
+Only files under the dataset folders will be moved, files under project folder will be ignored.
