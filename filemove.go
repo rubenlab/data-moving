@@ -60,6 +60,10 @@ func mkdirAll(client *sftp.Client, rootDir string, targetDir string, dustbin str
 	if err != nil {
 		return errors.Wrap(err, "can't mkdir for remote folder")
 	}
+	err = client.Chmod(targetFolder, DirFileMode)
+	if err != nil {
+		log.Printf("failed to change file mode of folder, the error is:\n%v", err)
+	}
 	dustbinDir, err := replacePath(currentDir, rootDir, dustbin)
 	if err != nil {
 		return errors.Wrap(err, "can't replace path for dustbin")
