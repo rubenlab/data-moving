@@ -14,4 +14,6 @@ So for users, all you have to do is to drop your files in the ***tohpc*** direct
 
 The program will not delete files, so you can check if the files are transfered correctly, and then delete them safely to free up space.
 
-Notice, use cut not copy. Since the program automatically removes files, copy will report an error, and there is no reason to use copy.
+Notice, use cut not copy. Since the program automatically removes files, copy will report an error.
+
+And I think there is no reason to use copy, if you really have a need to copy files to the tohpc directory, please contact me and we can discuss.
