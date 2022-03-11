@@ -10,7 +10,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/pkg/sftp"
 	"github.com/sevlyar/go-daemon"
 	"golang.org/x/term"
 )
@@ -89,42 +88,6 @@ func startMoveFile() {
 		log.Printf("finished\n")
 		time.Sleep(5 * time.Second)
 	}
-}
-
-var sftpClient *sftp.Client
-var connectTime time.Time
-
-func getSftpClient(config *Config, privateKey []byte, secret []byte) (*sftp.Client, error) {
-	if sftpClient == nil {
-		var err error
-		sftpClient, err = createSftpClient(config, privateKey, secret)
-		if err != nil {
-			return nil, err
-		}
-		connectTime = time.Now()
-		return sftpClient, nil
-	} else {
-		now := time.Now()
-		if connectTime.Add(10 * time.Minute).Before(now) {
-			log.Println("reconnect sftp client")
-			sftpClient.Close()
-			sftpClient = nil
-			var err error
-			sftpClient, err = createSftpClient(config, privateKey, secret)
-			if err != nil {
-				return nil, err
-			}
-			connectTime = time.Now()
-		}
-		return sftpClient, nil
-	}
-}
-
-func closeSftpClient() {
-	if sftpClient == nil {
-		return
-	}
-	sftpClient.Close()
 }
 
 func executeMoveOnce(config *Config, privateKey []byte, secret string) {

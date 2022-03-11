@@ -44,7 +44,7 @@ func executeMoveInternal(client *sftp.Client, overwrite bool, rootDir string, st
 				removeEmptyFolder(filePath)
 			}
 		} else {
-			if currentLevel <= startLevel {
+			if currentLevel < startLevel {
 				continue
 			}
 			moveFile(client, overwrite, rootDir, targetDir, dustbin, filePath)

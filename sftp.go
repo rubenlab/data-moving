@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
@@ -67,4 +69,40 @@ func createSftpClient(config *Config, privateKey []byte, secret []byte) (*sftp.C
 		return nil, err
 	}
 	return client, nil
+}
+
+var sftpClient *sftp.Client
+var connectTime time.Time
+
+func getSftpClient(config *Config, privateKey []byte, secret []byte) (*sftp.Client, error) {
+	if sftpClient == nil {
+		var err error
+		sftpClient, err = createSftpClient(config, privateKey, secret)
+		if err != nil {
+			return nil, err
+		}
+		connectTime = time.Now()
+		return sftpClient, nil
+	} else {
+		now := time.Now()
+		if connectTime.Add(10 * time.Minute).Before(now) {
+			log.Println("reconnect sftp client")
+			sftpClient.Close()
+			sftpClient = nil
+			var err error
+			sftpClient, err = createSftpClient(config, privateKey, secret)
+			if err != nil {
+				return nil, err
+			}
+			connectTime = time.Now()
+		}
+		return sftpClient, nil
+	}
+}
+
+func closeSftpClient() {
+	if sftpClient == nil {
+		return
+	}
+	sftpClient.Close()
 }
