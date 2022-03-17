@@ -58,6 +58,7 @@ func createSftpClient(config *Config, privateKey []byte, secret []byte) (*sftp.C
 			ssh.PublicKeys(*signer),
 		},
 		HostKeyCallback: *hostKeyCallback,
+		Timeout:         10 * time.Second,
 	}
 	// Dial your ssh server.
 	conn, err := ssh.Dial("tcp", config.Dest.Host+":"+fmt.Sprint(config.Dest.Port), sshClient)

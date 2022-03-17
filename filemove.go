@@ -22,10 +22,10 @@ func ExecuteMove(config *Config, client *sftp.Client) {
 	dustbin := config.Dustbin
 	startLevel := config.Source.StartLevel
 	overwrite := config.Source.Overwrite
-	executeMoveInternal(client, overwrite, rootDir, startLevel, targetDir, dustbin, rootDir, 1)
+	executeMoveInternal(config, client, overwrite, rootDir, startLevel, targetDir, dustbin, rootDir, 1)
 }
 
-func executeMoveInternal(client *sftp.Client, overwrite bool, rootDir string, startLevel int, targetDir string, dustbin string, currentDir string, currentLevel int) {
+func executeMoveInternal(config *Config, client *sftp.Client, overwrite bool, rootDir string, startLevel int, targetDir string, dustbin string, currentDir string, currentLevel int) {
 	files, err := ioutil.ReadDir(currentDir)
 	if err != nil {
 		log.Printf("can't open folder %s,\nthe error is: %v\n", currentDir, err)
@@ -34,12 +34,12 @@ func executeMoveInternal(client *sftp.Client, overwrite bool, rootDir string, st
 	for _, file := range files {
 		filePath := filepath.Join(currentDir, file.Name())
 		if file.IsDir() {
-			err = mkdirAll(client, rootDir, targetDir, dustbin, filePath)
+			err = mkdirAll(config, client, rootDir, targetDir, dustbin, filePath)
 			if err != nil {
 				log.Printf("can't create parent folders for folder %s,\nthe error is: %v\n", currentDir, err)
 				continue
 			}
-			executeMoveInternal(client, overwrite, rootDir, startLevel, targetDir, dustbin, filePath, currentLevel+1)
+			executeMoveInternal(config, client, overwrite, rootDir, startLevel, targetDir, dustbin, filePath, currentLevel+1)
 			if currentLevel >= startLevel {
 				removeEmptyFolder(filePath)
 			}
@@ -47,12 +47,12 @@ func executeMoveInternal(client *sftp.Client, overwrite bool, rootDir string, st
 			if currentLevel < startLevel {
 				continue
 			}
-			moveFile(client, overwrite, rootDir, targetDir, dustbin, filePath)
+			moveFile(config, client, overwrite, rootDir, targetDir, dustbin, filePath)
 		}
 	}
 }
 
-func mkdirAll(client *sftp.Client, rootDir string, targetDir string, dustbin string, currentDir string) error {
+func mkdirAll(config *Config, client *sftp.Client, rootDir string, targetDir string, dustbin string, currentDir string) error {
 	targetFolder, err := replacePath(currentDir, rootDir, targetDir)
 	if err != nil {
 		return errors.Wrap(err, "can't replace path for remote dir")
@@ -65,6 +65,12 @@ func mkdirAll(client *sftp.Client, rootDir string, targetDir string, dustbin str
 	if err != nil {
 		log.Printf("failed to change file mode of folder, the error is:\n%v", err)
 	}
+	if config.Dest.Gid != 0 {
+		err = client.Chown(targetFolder, config.Dest.Uid, config.Dest.Gid)
+		if err != nil {
+			log.Printf("failed to change folder owner, the error is:\n%v", err)
+		}
+	}
 	dustbinDir, err := replacePath(currentDir, rootDir, dustbin)
 	if err != nil {
 		return errors.Wrap(err, "can't replace path for dustbin")
@@ -76,7 +82,7 @@ func mkdirAll(client *sftp.Client, rootDir string, targetDir string, dustbin str
 	return nil
 }
 
-func moveFile(client *sftp.Client, overwrite bool, rootDir string, targetDir string, dustbin string, filePath string) {
+func moveFile(config *Config, client *sftp.Client, overwrite bool, rootDir string, targetDir string, dustbin string, filePath string) {
 	targetPath, err := replacePath(filePath, rootDir, targetDir)
 	if err != nil {
 		log.Printf("error in generating targetPath, the error is:\n%v", err)
@@ -118,6 +124,12 @@ func moveFile(client *sftp.Client, overwrite bool, rootDir string, targetDir str
 	err = client.Chmod(targetPath, FileFileMode)
 	if err != nil {
 		log.Printf("failed to change file mode, the error is:\n%v", err)
+	}
+	if config.Dest.Gid != 0 {
+		err = client.Chown(targetPath, config.Dest.Uid, config.Dest.Gid)
+		if err != nil {
+			log.Printf("failed to change file owner, the error is:\n%v", err)
+		}
 	}
 	err = os.Rename(filePath, dustbinPath)
 	if err != nil {

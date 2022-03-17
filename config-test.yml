@@ -8,4 +8,6 @@ dest:
   identity-file: /home/ytm/test/id-rsa
   username: yi1
   path: /usr/yi1
+  gid: 0
+  uid: 0
 dustbin: /home/ytm/test2

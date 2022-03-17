@@ -20,6 +20,8 @@ type Config struct {
 		IdentityFile string `yaml:"identity-file"`
 		Username     string
 		Path         string
+		Gid          int // if not zero, will be used to set file group
+		Uid          int // if gid is not zero, a correct uid value should be set
 	}
 	Dustbin    string
 	KnownHosts string
