@@ -109,7 +109,7 @@ func moveFile(config *Config, client *sftp.Client, overwrite bool, rootDir strin
 		return
 	}
 	defer targetFile.Close()
-	sourceFile, err := os.Open(filePath)
+	sourceFile, err := os.OpenFile(filePath, os.O_RDWR, 0)
 	if err != nil {
 		log.Printf("can't open source file, the error is:\n%v", err)
 		return
