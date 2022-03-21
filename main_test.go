@@ -18,6 +18,10 @@ func TestLoadConfig(t *testing.T) {
 		t.Errorf("path is not correct, the loaded path is: %v", config.Dest.Path)
 		t.Error(config)
 	}
+	if config.KnownHosts != "/home/ytm/.ssh/known_hosts" {
+		t.Errorf("KnownHosts is not correct: %v", config.KnownHosts)
+		t.Error(config)
+	}
 	if !config.Source.Overwrite {
 		t.Errorf("overwrite parameter is not expected value %v", true)
 	}

@@ -11,3 +11,4 @@ dest:
   gid: 0
   uid: 0
 dustbin: /home/ytm/test2
+known-hosts: "/home/ytm/.ssh/known_hosts"

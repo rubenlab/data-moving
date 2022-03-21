@@ -24,7 +24,7 @@ type Config struct {
 		Uid          int // if gid is not zero, a correct uid value should be set
 	}
 	Dustbin    string
-	KnownHosts string
+	KnownHosts string `yaml:"known-hosts"`
 }
 
 func LoadConfig(path string) (*Config, error) {
