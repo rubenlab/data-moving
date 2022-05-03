@@ -1,29 +1,25 @@
 package main
 
 import (
-	"os"
 	"testing"
 )
 
 func TestLoadConfig(t *testing.T) {
-	config, err := LoadConfig("./config-test.yml")
+	config, err := LoadAppConfig("./config-test.yml", "")
 	if err != nil {
 		t.Error(err)
 	}
-	if config.Source.StartLevel != 2 {
-		t.Errorf("start level is not correct, the loaded config level is: %d", config.Source.StartLevel)
-		t.Error(config)
+	if config.Execution.StartLevel != 2 {
+		t.Errorf("start level is not correct, the loaded start level is: %d", config.Execution.StartLevel)
 	}
-	if config.Dest.Path != "/usr/yi1" {
-		t.Errorf("path is not correct, the loaded path is: %v", config.Dest.Path)
-		t.Error(config)
+	if config.Source.Type != "local" {
+		t.Errorf("Source type is not correct, the loaded Source type is: %s", config.Source.Type)
 	}
-	if config.KnownHosts != "/home/ytm/.ssh/known_hosts" {
-		t.Errorf("KnownHosts is not correct: %v", config.KnownHosts)
-		t.Error(config)
+	if config.Dest.ShareName != "ukln-all$" {
+		t.Errorf("Dest ShareName is not correct, the loaded ShareName is: %s", config.Dest.ShareName)
 	}
-	if !config.Source.Overwrite {
-		t.Errorf("overwrite parameter is not expected value %v", true)
+	if config.Dest.KnownHosts != "/home/ytm/.ssh/known_hosts" {
+		t.Errorf("Dest KnownHosts is not correct, the loaded KnownHosts is: %s", config.Dest.KnownHosts)
 	}
 }
 
@@ -42,15 +38,18 @@ func TestCreateNewFileName(t *testing.T) {
 	}
 }
 
-func TestRemoveEmptyFolder(t *testing.T) {
-	path := "./emptyTestFolder"
-	os.Mkdir(path, DirFileMode)
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		t.Errorf("create empty folder failed")
-		return
+func TestEncryption(t *testing.T) {
+	data := "random text, hahaha"
+	secret := "lalala_this@is#password"
+	encryptedStr, err := encryptToString(secret, []byte(data))
+	if err != nil {
+		t.Error(err)
 	}
-	removeEmptyFolder(path)
-	if _, err := os.Stat(path); !os.IsNotExist(err) {
-		t.Errorf("empty folder not deleted")
+	dataBytes, err := decryptString(secret, encryptedStr)
+	if err != nil {
+		t.Error(err)
+	}
+	if data != string(dataBytes) {
+		t.Errorf("encrypt and decrypt failed, the result is: %s", string(dataBytes))
 	}
 }

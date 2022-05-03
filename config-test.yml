@@ -1,14 +1,20 @@
 source:
-  root-dir: /home/ytm/test
-  start-level: 2
-  overwrite: true
+  type: local
+  path: /home/ytm/test
 dest:
-  host: transfer-mdc.hpc.gwdg.de
-  port: 22
+  type: smb
+  host: wfs-medizin.top.gwdg.de
+  port: 445
+  path: ukln100
+  share-name: ukln-all$
   identity-file: /home/ytm/test/id-rsa
   username: yi1
-  path: /usr/yi1
+  password: 1234567
+  domain: gwdg
+dustbin: /home/ytm/test2
+execution:
+  start-level: 2
+  overwrite: true
   gid: 0
   uid: 0
-dustbin: /home/ytm/test2
 known-hosts: "/home/ytm/.ssh/known_hosts"

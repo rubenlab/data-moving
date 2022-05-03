@@ -8,19 +8,30 @@ import (
 	"os"
 	"strings"
 	"syscall"
-	"time"
 
 	"github.com/sevlyar/go-daemon"
 	"golang.org/x/term"
 )
 
 var (
-	secretFile = flag.String("pwdfile", "", "file location that store the private key password")
+	secretFile = flag.String("pwdfile", "", "file location that store the decryption secret")
 	asDaemon   = flag.Bool("d", false, "run in daemon")
+	encrypt    = flag.String("encrypt", "", "encrypt password")
+	decrypt    = flag.String("decrypt", "", "decrypt password")
 )
 
 func main() {
 	flag.Parse()
+
+	if *encrypt != "" {
+		encryptFunc()
+		return
+	}
+
+	if *decrypt != "" {
+		decryptFunc()
+		return
+	}
 
 	if *asDaemon {
 		cntxt := &daemon.Context{
@@ -48,13 +59,56 @@ func main() {
 	startMoveFile()
 }
 
-func startMoveFile() {
-	config, err := LoadConfig("./config.yml")
+func encryptFunc() {
+	secret, err := inputSecret()
 	if err != nil {
-		log.Fatalf("can't load config with error: %v", err)
+		fmt.Printf("error in input password, error: %v", err)
+		return
+	}
+	if secret == "" {
+		fmt.Println("please input a none empty secret")
 		return
 	}
 
+	encrypted, err := encryptToString(secret, []byte(*encrypt))
+	if err != nil {
+		fmt.Printf("error: %v", err)
+		return
+	}
+	fmt.Println(encrypted)
+}
+
+func decryptFunc() {
+	secret, err := inputSecret()
+	if err != nil {
+		fmt.Printf("error in input password, error: %v", err)
+		return
+	}
+	if secret == "" {
+		fmt.Println("please input a none empty secret")
+		return
+	}
+
+	decrypted, err := decryptString(secret, *decrypt)
+	if err != nil {
+		fmt.Printf("error: %v", err)
+		return
+	}
+	fmt.Println(string(decrypted))
+}
+
+func inputSecret() (string, error) {
+	fmt.Println("Input your secret:")
+	secretArr, err := term.ReadPassword(int(syscall.Stdin))
+	if err != nil {
+		return "", err
+	}
+	secret := string(secretArr)
+	return secret, nil
+}
+
+func startMoveFile() {
+	var err error
 	var secretStr string
 	if *secretFile != "" {
 		var secret []byte
@@ -75,26 +129,9 @@ func startMoveFile() {
 		secretStr = string(bytePassword)
 	}
 	secretStr = strings.TrimSpace(secretStr)
-
-	privateKey, err := ioutil.ReadFile(config.Dest.IdentityFile)
+	config, err := LoadAppConfig("./config.yml", secretStr)
 	if err != nil {
-		log.Fatalf("can't load identity file: %v", err)
+		log.Fatalf("failed to load config, %v", err)
 	}
-
-	defer closeSftpClient()
-	for {
-		log.Printf("execute file move\n")
-		executeMoveOnce(config, privateKey, secretStr)
-		log.Printf("finished\n")
-		time.Sleep(5 * time.Second)
-	}
-}
-
-func executeMoveOnce(config *Config, privateKey []byte, secret string) {
-	client, err := getSftpClient(config, privateKey, []byte(secret))
-	if err != nil {
-		log.Printf("can't create sftp client: %v\n", err)
-		return
-	}
-	ExecuteMove(config, client)
+	KeepFileMove(config)
 }

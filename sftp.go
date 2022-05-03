@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -27,7 +28,7 @@ func getKnownHostsFile(providedPath string) string {
 var hostKeyCallback *ssh.HostKeyCallback
 var signer *ssh.Signer
 
-func createSftpClient(config *Config, privateKey []byte, secret []byte) (*sftp.Client, error) {
+func createSftpClient(config *DirFsConfig) (*sftp.Client, error) {
 	var err error
 	if hostKeyCallback == nil {
 		hostKeyCallbackImpl, err := kh.New(getKnownHostsFile(config.KnownHosts))
@@ -37,13 +38,19 @@ func createSftpClient(config *Config, privateKey []byte, secret []byte) (*sftp.C
 		hostKeyCallback = &hostKeyCallbackImpl
 	}
 
+	privateKey, err := ioutil.ReadFile(config.IdentityFile)
+	if err != nil {
+		log.Fatalf("can't load identity file: %v", err)
+	}
+
 	if signer == nil {
 		var signerImpl ssh.Signer
+		secret := config.Password
 		// Create the Signer for this private key.
-		if len(secret) == 0 {
+		if secret == "" {
 			signerImpl, err = ssh.ParsePrivateKey(privateKey)
 		} else {
-			signerImpl, err = ssh.ParsePrivateKeyWithPassphrase(privateKey, secret)
+			signerImpl, err = ssh.ParsePrivateKeyWithPassphrase(privateKey, []byte(secret))
 		}
 		if err != nil {
 			return nil, err
@@ -52,7 +59,7 @@ func createSftpClient(config *Config, privateKey []byte, secret []byte) (*sftp.C
 	}
 
 	sshClient := &ssh.ClientConfig{
-		User: config.Dest.Username,
+		User: config.Username,
 		Auth: []ssh.AuthMethod{
 			// Add in password check here for moar security.
 			ssh.PublicKeys(*signer),
@@ -61,7 +68,7 @@ func createSftpClient(config *Config, privateKey []byte, secret []byte) (*sftp.C
 		Timeout:         10 * time.Second,
 	}
 	// Dial your ssh server.
-	conn, err := ssh.Dial("tcp", config.Dest.Host+":"+fmt.Sprint(config.Dest.Port), sshClient)
+	conn, err := ssh.Dial("tcp", config.Host+":"+fmt.Sprint(config.Port), sshClient)
 	if err != nil {
 		return nil, err
 	}
@@ -70,40 +77,4 @@ func createSftpClient(config *Config, privateKey []byte, secret []byte) (*sftp.C
 		return nil, err
 	}
 	return client, nil
-}
-
-var sftpClient *sftp.Client
-var connectTime time.Time
-
-func getSftpClient(config *Config, privateKey []byte, secret []byte) (*sftp.Client, error) {
-	if sftpClient == nil {
-		var err error
-		sftpClient, err = createSftpClient(config, privateKey, secret)
-		if err != nil {
-			return nil, err
-		}
-		connectTime = time.Now()
-		return sftpClient, nil
-	} else {
-		now := time.Now()
-		if connectTime.Add(10 * time.Minute).Before(now) {
-			log.Println("reconnect sftp client")
-			sftpClient.Close()
-			sftpClient = nil
-			var err error
-			sftpClient, err = createSftpClient(config, privateKey, secret)
-			if err != nil {
-				return nil, err
-			}
-			connectTime = time.Now()
-		}
-		return sftpClient, nil
-	}
-}
-
-func closeSftpClient() {
-	if sftpClient == nil {
-		return
-	}
-	sftpClient.Close()
 }
