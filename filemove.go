@@ -120,6 +120,10 @@ func FileMove(source DirFs, dest DirFs, dustbin string, config ExecutionConfig) 
 		if level < config.StartLevel {
 			return nil
 		}
+		if strings.HasPrefix(filepath.Base(path), ".DS_Store") {
+			source.Remove(path)
+			return nil
+		}
 		targetPath := path
 
 		// rename target file if needed
@@ -169,10 +173,6 @@ func FileMove(source DirFs, dest DirFs, dustbin string, config ExecutionConfig) 
 		err = source.Move(path, dustbin)
 		if err != nil {
 			log.Printf("failed to move file to the dustbin, the error is:\n%v", err)
-			filename := filepath.Base(path)
-			if filename == ".DS_Store" {
-				source.Remove(path)
-			}
 		}
 
 		return nil
